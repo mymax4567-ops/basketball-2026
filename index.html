@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>🏀 籃球錦標賽</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#030712;color:#f8fafc;font-family:'Noto Sans TC',Inter,sans-serif;min-height:100vh}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.pulse{animation:pulse 1.5s infinite}
+.fade-in{animation:fadeIn .3s ease forwards}
+
+.header{background:linear-gradient(135deg,#0f172a 0%,#1a0800 50%,#0f172a 100%);border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:20}
+.header-inner{max-width:1100px;margin:0 auto;padding:14px 16px 0}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px}
+.event-sub{font-size:10px;color:#f97316;font-weight:800;letter-spacing:.3em;text-transform:uppercase;margin-bottom:4px}
+.event-name{font-size:22px;font-weight:900;letter-spacing:-.02em;line-height:1.2}
+.event-name span.o{color:#f97316}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.admin-btn{border-radius:20px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+.admin-btn.off{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#94a3b8}
+.admin-btn.on{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.5);color:#f97316}
+.live-dot{display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:#4ade80}
+.live-label{font-size:10px;color:#4ade80;font-weight:700}
+.lang-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#94a3b8;border-radius:16px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.lang-btn:hover{background:rgba(255,255,255,.1);color:#f8fafc}
+
+.tabs{display:flex;border-top:1px solid rgba(255,255,255,.08);margin:0 -16px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:12px 18px;font-size:13px;font-weight:700;background:transparent;border:none;cursor:pointer;color:#475569;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab.active{color:#f97316;border-bottom:2px solid #f97316}
+
+.content{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px}
+
+/* Group tabs */
+.group-tabs-row{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.gtab{flex:0 0 auto;padding:7px 18px;font-size:13px;font-weight:700;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:20px;cursor:pointer;color:#94a3b8;transition:all .2s}
+.gtab.active{background:rgba(249,115,22,.15);border-color:rgba(249,115,22,.5);color:#f97316}
+
+/* Admin panel */
+.admin-panel{background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.2);border-radius:16px;padding:16px;margin-bottom:16px}
+.admin-panel-title{font-size:12px;font-weight:800;color:#f97316;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
+.admin-section{margin-bottom:14px}
+.admin-section:last-child{margin-bottom:0}
+.admin-section-label{font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+.admin-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.admin-input{background:#1e293b;border:1px solid rgba(249,115,22,.4);border-radius:10px;padding:8px 12px;color:#f8fafc;font-size:13px;outline:none;transition:border-color .2s;min-width:140px}
+.admin-input:focus{border-color:#f97316}
+.admin-save-btn{background:#f97316;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.admin-save-btn:hover{background:#ea6c0a}
+.danger-btn{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#f87171;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+.danger-btn:hover{background:rgba(239,68,68,.25);border-color:#ef4444}
+.group-name-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+
+/* Bracket */
+.bracket-scroll{overflow-x:auto;padding-bottom:16px}
+.bracket-hint{font-size:12px;color:#475569;margin-bottom:12px}
+.bracket-row{display:flex;gap:20px;min-width:max-content;align-items:flex-start}
+.round-col{display:flex;flex-direction:column;align-items:center}
+.round-label{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px}
+.round-matches{display:flex;flex-direction:column}
+.match-card{position:relative;padding:12px 14px;min-width:185px;border-radius:14px;transition:border-color .3s;margin-bottom:8px}
+.match-card.done{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.6)}
+.match-card.live{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.5)}
+.match-card.pending{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.match-card.placeholder{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
+.match-status{position:absolute;top:8px;right:10px;display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700}
+.status-dot{width:6px;height:6px;border-radius:50%}
+.team-row{display:flex;justify-content:space-between;align-items:center}
+.team-name{font-size:13px}
+.team-name.winner{color:#f97316;font-weight:700}
+.team-name.placeholder-t{color:#334155}
+.team-score{font-family:monospace;font-size:20px;font-weight:700;margin-left:12px;color:#94a3b8}
+.team-score.winner{color:#f97316}
+.divider{border-top:1px solid rgba(255,255,255,.08);margin:5px 0}
+.edit-btn{width:100%;background:transparent;border:1px solid rgba(249,115,22,.25);border-radius:8px;color:#f97316;font-size:12px;padding:5px 0;cursor:pointer;margin-top:8px;transition:background .2s}
+.edit-btn:hover{background:rgba(249,115,22,.1)}
+.score-inputs{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.score-input{width:52px;background:#1e293b;border:1px solid #f97316;border-radius:8px;padding:3px 6px;color:#f8fafc;text-align:center;font-size:13px;outline:none}
+.vs-label{color:#475569;font-size:12px}
+.confirm-btn{background:#f97316;color:#fff;border:none;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.cancel-btn{background:transparent;color:#94a3b8;border:none;font-size:12px;cursor:pointer}
+.champion-box{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 22px;background:rgba(251,191,36,.1);border:2px solid #fbbf24;border-radius:16px;margin-left:16px}
+.champion-icon{font-size:26px}
+.champion-label{font-size:11px;color:#fbbf24;font-weight:800;letter-spacing:.15em;text-align:center}
+.champion-name{font-size:16px;color:#fbbf24;font-weight:900}
+
+/* Announce */
+.ann-input-row{display:flex;gap:8px;margin-bottom:12px}
+.ann-input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(249,115,22,.4);border-radius:12px;padding:10px 14px;color:#f8fafc;font-size:14px;outline:none}
+.ann-input:focus{border-color:#f97316}
+.ann-post-btn{background:#f97316;color:#fff;border:none;border-radius:12px;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer}
+.ann-card{padding:14px 18px;border-radius:14px;margin-bottom:8px}
+.ann-time{font-size:11px;color:#f97316;font-weight:700;margin-bottom:4px}
+.ann-text{font-size:14px;line-height:1.6}
+.ann-header-row{display:flex;justify-content:space-between;align-items:flex-start}
+.del-btn{background:transparent;border:none;color:#475569;cursor:pointer;font-size:16px;padding:2px}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{padding:28px;width:100%;max-width:340px;border-radius:20px;background:#0f172a;border:1px solid rgba(249,115,22,.3)}
+.modal h2{font-size:18px;font-weight:800;margin-bottom:4px}
+.modal p{font-size:13px;color:#94a3b8;margin-bottom:18px}
+.modal-input{width:100%;background:#1e293b;border-radius:10px;padding:10px 14px;color:#f8fafc;font-size:14px;outline:none;margin-bottom:4px;transition:border-color .2s}
+.modal-input.ok{border:1px solid rgba(255,255,255,.12)}
+.modal-input.err{border:1px solid #ef4444}
+.err-msg{color:#ef4444;font-size:12px;margin-bottom:10px}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+.modal-cancel{flex:1;background:transparent;border:1px solid rgba(255,255,255,.12);color:#94a3b8;border-radius:10px;padding:10px 0;font-size:14px;cursor:pointer}
+.modal-ok{flex:1;background:#f97316;color:#fff;border:none;border-radius:10px;padding:10px 0;font-size:14px;font-weight:700;cursor:pointer}
+.modal-hint{margin-top:14px;text-align:center;color:#334155;font-size:11px}
+
+/* Confirm dialog */
+.confirm-modal{padding:28px;width:100%;max-width:320px;border-radius:20px;background:#0f172a;border:1px solid rgba(239,68,68,.3)}
+.confirm-modal h2{font-size:17px;font-weight:800;margin-bottom:8px}
+.confirm-modal p{font-size:13px;color:#94a3b8;margin-bottom:0;line-height:1.6}
+.confirm-btns{display:flex;gap:8px;margin-top:18px}
+.confirm-cancel{flex:1;background:transparent;border:1px solid rgba(255,255,255,.12);color:#94a3b8;border-radius:10px;padding:10px 0;font-size:14px;cursor:pointer}
+.confirm-ok{flex:1;background:#ef4444;color:#fff;border:none;border-radius:10px;padding:10px 0;font-size:14px;font-weight:700;cursor:pointer}
+
+.hidden{display:none!important}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid rgba(249,115,22,.4);color:#f8fafc;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;transition:opacity .4s}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <div class="event-sub" id="headerSub">2024 · 籃球錦標賽</div>
+        <div class="event-name" id="headerTitle">SLAM <span class="o">DUNK</span> CUP</div>
+      </div>
+      <div class="header-right">
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="lang-btn" onclick="toggleLang()">🌐 EN</button>
+          <button class="admin-btn off" id="adminBtn" onclick="toggleAdmin()">🔐 工作人員</button>
+        </div>
+        <div class="live-dot">
+          <div class="dot pulse"></div>
+          <div class="live-label" id="liveLabel">即時更新</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs" id="tabBar">
+      <button class="tab active" onclick="showTab('groups',this)" id="tabGroups">🏆 晉級圖</button>
+      <button class="tab" onclick="showTab('announce',this)" id="tabAnnounce">📢 公告</button>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Groups Tab -->
+  <div id="tab-groups">
+    <!-- Admin Panel -->
+    <div class="admin-panel hidden" id="adminPanel">
+      <div class="admin-panel-title" id="apTitle">⚙️ 管理員設定</div>
+
+      <!-- Title edit -->
+      <div class="admin-section">
+        <div class="admin-section-label" id="apTitleLabel">主視覺標題</div>
+        <div class="admin-row">
+          <input class="admin-input" id="inputMainTitle" placeholder="副標題 (例：2024 籃球錦標賽)" style="flex:1;min-width:160px"/>
+          <input class="admin-input" id="inputMainName" placeholder="主標題 (例：SLAM DUNK CUP)" style="flex:1;min-width:160px"/>
+          <button class="admin-save-btn" onclick="saveTitle()" id="btnSaveTitle">儲存</button>
+        </div>
+      </div>
+
+      <!-- Group names edit -->
+      <div class="admin-section">
+        <div class="admin-section-label" id="apGroupLabel">組別名稱</div>
+        <div class="group-name-grid">
+          <input class="admin-input" id="gname0" placeholder="第一組"/>
+          <input class="admin-input" id="gname1" placeholder="第二組"/>
+          <input class="admin-input" id="gname2" placeholder="第三組"/>
+          <input class="admin-input" id="gname3" placeholder="第四組"/>
+        </div>
+        <div style="margin-top:8px">
+          <button class="admin-save-btn" onclick="saveGroupNames()" id="btnSaveGroups">儲存組別名稱</button>
+        </div>
+      </div>
+
+      <!-- Clear all -->
+      <div class="admin-section">
+        <div class="admin-section-label" id="apDangerLabel">危險操作</div>
+        <button class="danger-btn" onclick="confirmClearAll()" id="btnClearAll">🗑️ 清除所有晉級圖比分</button>
+      </div>
+    </div>
+
+    <div class="group-tabs-row" id="groupTabsRow"></div>
+    <div class="bracket-hint" id="bracketHint">← 左右滑動查看完整晉級圖</div>
+    <div class="bracket-scroll">
+      <div class="bracket-row" id="bracketRow"></div>
+    </div>
+  </div>
+
+  <!-- Announce Tab -->
+  <div id="tab-announce" class="hidden">
+    <div id="annInputRow" class="ann-input-row hidden">
+      <input class="ann-input" id="annInput" placeholder="輸入公告內容後按發布..."
+        onkeydown="if(event.key==='Enter')postAnn()"/>
+      <button class="ann-post-btn" onclick="postAnn()" id="btnPostAnn">發布</button>
+    </div>
+    <div id="annList"></div>
+  </div>
+
+</div>
+
+<!-- Login Modal -->
+<div class="modal-bg hidden" id="loginModal">
+  <div class="modal">
+    <h2 id="loginTitle">🔐 工作人員登入</h2>
+    <p id="loginDesc">輸入管理員密碼以更新比分與設定</p>
+    <input class="modal-input ok" type="password" id="pwInput" placeholder="密碼"
+      onkeydown="if(event.key==='Enter')doLogin()"
+      oninput="document.getElementById('pwInput').className='modal-input ok';document.getElementById('pwErr').className='err-msg hidden'"/>
+    <div class="err-msg hidden" id="pwErr">密碼錯誤，請再試一次</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeLogin()" id="btnLoginCancel">取消</button>
+      <button class="modal-ok" onclick="doLogin()" id="btnLoginOk">登入</button>
+    </div>
+    <div class="modal-hint">Demo 密碼：bball2024</div>
+  </div>
+</div>
+
+<!-- Confirm Clear Modal -->
+<div class="modal-bg hidden" id="confirmModal">
+  <div class="confirm-modal">
+    <h2 id="confirmTitle">⚠️ 確認清除</h2>
+    <p id="confirmDesc">這將清除所有四組的比分與晉級資料，此操作無法復原，確定繼續嗎？</p>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="document.getElementById('confirmModal').className='modal-bg hidden'" id="btnConfirmCancel">取消</button>
+      <button class="confirm-ok" onclick="clearAll()" id="btnConfirmOk">確認清除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PW = 'bball2024';
+const ROUND_COLORS = {'十六強':'#60a5fa','八強':'#a78bfa','四強':'#f472b6','決賽':'#f97316',
+  'Round of 16':'#60a5fa','Quarterfinals':'#a78bfa','Semifinals':'#f472b6','Final':'#f97316'};
+
+// ── Language ──
+let lang = 'zh';
+const T = {
+  zh: {
+    sub:'2024 · 籃球錦標賽', live:'即時更新', liveN:(n)=>`${n} 場進行中`,
+    tabBracket:'🏆 晉級圖', tabAnnounce:'📢 公告',
+    staffBtn:'🔐 工作人員', adminMode:'✅ 管理員模式',
+    bracketHint:'← 左右滑動查看完整晉級圖',
+    apTitle:'⚙️ 管理員設定', apTitleLabel:'主視覺標題', apGroupLabel:'組別名稱', apDangerLabel:'危險操作',
+    saveTitle:'儲存', saveGroups:'儲存組別名稱', clearBtn:'🗑️ 清除所有晉級圖比分',
+    loginTitle:'🔐 工作人員登入', loginDesc:'輸入管理員密碼以更新比分與設定',
+    loginCancel:'取消', loginOk:'登入', loginErr:'密碼錯誤，請再試一次',
+    confirmTitle:'⚠️ 確認清除', confirmDesc:'這將清除所有四組的比分與晉級資料，此操作無法復原，確定繼續嗎？',
+    confirmCancel:'取消', confirmOk:'確認清除',
+    statusDone:'結束', statusLive:'進行中', statusPending:'待賽',
+    editBtn:'✏️ 更新比分', confirmScore:'確認', cancelScore:'取消',
+    champion:'冠軍', postAnn:'發布', annPlaceholder:'輸入公告內容後按發布...',
+    noAnn:'目前沒有公告', roundNames:['十六強','八強','四強','決賽'],
+    toastTitle:'標題已更新', toastGroups:'組別名稱已更新', toastCleared:'已清除所有比分',
+    langToggle:'🌐 EN', titlePlaceholder1:'副標題 (例：2024 籃球錦標賽)', titlePlaceholder2:'主標題 (例：SLAM DUNK CUP)',
+    defaultGroups:['第一組','第二組','第三組','第四組'],
+  },
+  en: {
+    sub:'2024 · Basketball Championship', live:'Live Updates', liveN:(n)=>`${n} Live`,
+    tabBracket:'🏆 Bracket', tabAnnounce:'📢 Notices',
+    staffBtn:'🔐 Staff', adminMode:'✅ Admin Mode',
+    bracketHint:'← Scroll left/right to view full bracket',
+    apTitle:'⚙️ Admin Settings', apTitleLabel:'Event Title', apGroupLabel:'Group Names', apDangerLabel:'Danger Zone',
+    saveTitle:'Save', saveGroups:'Save Group Names', clearBtn:'🗑️ Clear All Brackets',
+    loginTitle:'🔐 Staff Login', loginDesc:'Enter admin password to update scores and settings',
+    loginCancel:'Cancel', loginOk:'Login', loginErr:'Wrong password, please try again',
+    confirmTitle:'⚠️ Confirm Clear', confirmDesc:'This will clear all scores and bracket data for all 4 groups. This cannot be undone. Continue?',
+    confirmCancel:'Cancel', confirmOk:'Confirm Clear',
+    statusDone:'Done', statusLive:'Live', statusPending:'Upcoming',
+    editBtn:'✏️ Update Score', confirmScore:'Confirm', cancelScore:'Cancel',
+    champion:'Champion', postAnn:'Post', annPlaceholder:'Type announcement and press Post...',
+    noAnn:'No announcements yet', roundNames:['Round of 16','Quarterfinals','Semifinals','Final'],
+    toastTitle:'Title updated', toastGroups:'Group names updated', toastCleared:'All scores cleared',
+    langToggle:'🌐 中文', titlePlaceholder1:'Subtitle (e.g. 2024 Basketball Championship)', titlePlaceholder2:'Main Title (e.g. SLAM DUNK CUP)',
+    defaultGroups:['Group 1','Group 2','Group 3','Group 4'],
+  }
+};
+
+function t(key,...args){ const fn=T[lang][key]; return typeof fn==='function'?fn(...args):fn; }
+
+// ── State ──
+let isAdmin = false;
+let currentGroup = 0;
+let mainTitle = 'SLAM <span class="o">DUNK</span> CUP';
+let mainSub = '2024 · 籃球錦標賽';
+let groupNames = ['第一組','第二組','第三組','第四組'];
+
+const DEFAULT_TEAMS = [
+  ['火箭隊','雷霆隊','湖人隊','勇士隊','公牛隊','熱火隊','凱爾特人','76人隊','快艇隊','爵士隊','灰熊隊','馬刺隊','開拓者','老鷹隊','魔術隊','黃蜂隊'],
+  ['猛龍隊','溜馬隊','黃金州','孟菲斯','波特蘭','聖安東','奧克拉','明尼蘇','底特律','夏洛特','克里夫','紐奧良','薩克拉','菲尼克','丹佛隊','達拉斯'],
+  ['A1隊','A2隊','B1隊','B2隊','C1隊','C2隊','D1隊','D2隊','E1隊','E2隊','F1隊','F2隊','G1隊','G2隊','H1隊','H2隊'],
+  ['X1隊','X2隊','X3隊','X4隊','Y1隊','Y2隊','Y3隊','Y4隊','Z1隊','Z2隊','Z3隊','Z4隊','W1隊','W2隊','W3隊','W4隊'],
+];
+
+let allRounds = DEFAULT_TEAMS.map(teams => buildBracket(teams));
+let announcements = [
+  {id:1,time:'08:30',text:'🏀 歡迎參加 2024 籃球錦標賽！報到處在大門右側，請攜帶報名證。'},
+  {id:2,time:'08:45',text:'📋 所有隊伍請於比賽前 15 分鐘到指定場地集合熱身，遲到視同棄權。'},
+];
+let annIdCounter = 100;
+
+// ── Bracket ──
+function buildBracket(teams){
+  const r1=[];
+  for(let i=0;i<8;i++) r1.push({id:`r1-${i}`,t1:teams[i*2],t2:teams[i*2+1],s1:null,s2:null,winner:null});
+  const r2=[],r3=[],rf=[];
+  for(let i=0;i<4;i++) r2.push({id:`r2-${i}`,t1:null,t2:null,s1:null,s2:null,winner:null});
+  for(let i=0;i<2;i++) r3.push({id:`r3-${i}`,t1:null,t2:null,s1:null,s2:null,winner:null});
+  rf.push({id:'final',t1:null,t2:null,s1:null,s2:null,winner:null});
+  const rn=t('roundNames');
+  return [
+    {name:rn[0],matches:r1},{name:rn[1],matches:r2},{name:rn[2],matches:r3},{name:rn[3],matches:rf}
+  ];
+}
+
+function propagate(rounds){
+  const rn=t('roundNames');
+  rounds.forEach((r,i)=>r.name=rn[i]);
+  for(let ri=0;ri<rounds.length-1;ri++){
+    const winners=rounds[ri].matches.map(m=>m.winner);
+    for(let mi=0;mi<rounds[ri+1].matches.length;mi++){
+      rounds[ri+1].matches[mi].t1=winners[mi*2]||null;
+      rounds[ri+1].matches[mi].t2=winners[mi*2+1]||null;
+      if(!rounds[ri+1].matches[mi].t1||!rounds[ri+1].matches[mi].t2){
+        rounds[ri+1].matches[mi].s1=null;rounds[ri+1].matches[mi].s2=null;rounds[ri+1].matches[mi].winner=null;
+      }
+    }
+  }
+}
+
+function renderGroupTabs(){
+  const row=document.getElementById('groupTabsRow');
+  row.innerHTML='';
+  groupNames.forEach((name,i)=>{
+    const btn=document.createElement('button');
+    btn.className='gtab'+(i===currentGroup?' active':'');
+    btn.textContent=name;
+    btn.onclick=()=>{ currentGroup=i; renderGroupTabs(); renderBracket(); };
+    row.appendChild(btn);
+  });
+}
+
+function renderBracket(){
+  const rounds=allRounds[currentGroup];
+  const rn=t('roundNames');
+  rounds.forEach((r,i)=>r.name=rn[i]);
+  const row=document.getElementById('bracketRow');
+  row.innerHTML='';
+  rounds.forEach((round,ri)=>{
+    const col=document.createElement('div');
+    col.className='round-col';
+    const lbl=document.createElement('div');
+    lbl.className='round-label';
+    lbl.style.color=ROUND_COLORS[round.name]||'#94a3b8';
+    lbl.textContent=round.name;
+    col.appendChild(lbl);
+    const md=document.createElement('div');
+    md.className='round-matches';
+    md.style.gap=(Math.pow(2,ri)*10)+'px';
+    round.matches.forEach(m=>md.appendChild(makeMatchCard(m)));
+    col.appendChild(md);
+    row.appendChild(col);
+  });
+  const champ=rounds[3].matches[0].winner;
+  if(champ){
+    const box=document.createElement('div');
+    box.className='champion-box';
+    box.innerHTML=`<div class="champion-icon">🏆</div><div class="champion-label">${groupNames[currentGroup]} ${t('champion')}</div><div class="champion-name">${champ}</div>`;
+    row.appendChild(box);
+  }
+}
+
+function makeMatchCard(m){
+  const isPlaceholder=!m.t1&&!m.t2;
+  const isDone=!!m.winner;
+  const isLive=m.s1!==null&&!isDone;
+  const t1=m.t1||'待定', t2=m.t2||'待定';
+  const div=document.createElement('div');
+  div.className='match-card '+(isPlaceholder?'placeholder':isDone?'done':isLive?'live':'pending');
+  let statusHTML='';
+  if(!isPlaceholder){
+    const sc=isDone?'#f97316':isLive?'#fbbf24':'#475569';
+    const sl=isDone?t('statusDone'):isLive?t('statusLive'):t('statusPending');
+    const pulse=isLive?' pulse':'';
+    statusHTML=`<div class="match-status"><div class="status-dot${pulse}" style="background:${sc}"></div><span style="color:${sc}">${sl}</span></div>`;
+  }
+  const w1=m.winner===t1,w2=m.winner===t2;
+  const editId=`edit-${currentGroup}-${m.id}`;
+  div.innerHTML=`
+    ${statusHTML}
+    <div class="team-row">
+      <span class="team-name ${isPlaceholder?'placeholder-t':w1?'winner':''}">${t1}</span>
+      ${!isPlaceholder?`<span class="team-score ${w1?'winner':''}">${m.s1!==null?m.s1:'–'}</span>`:''}
+    </div>
+    <div class="divider"></div>
+    <div class="team-row">
+      <span class="team-name ${isPlaceholder?'placeholder-t':w2?'winner':''}">${t2}</span>
+      ${!isPlaceholder?`<span class="team-score ${w2?'winner':''}">${m.s2!==null?m.s2:'–'}</span>`:''}
+    </div>
+    ${isAdmin&&!isPlaceholder?`<div id="${editId}"><button class="edit-btn" onclick="openEdit(${currentGroup},'${m.id}','${t1.replace(/'/g,"\\'")}','${t2.replace(/'/g,"\\'")}','${editId}')">${t('editBtn')}</button></div>`:''}
+  `;
+  return div;
+}
+
+function openEdit(g,id,t1,t2,editId){
+  const area=document.getElementById(editId);
+  area.innerHTML=`
+    <div class="score-inputs">
+      <input class="score-input" id="si1-${id}" type="number" min="0" placeholder="${t1}"/>
+      <span class="vs-label">vs</span>
+      <input class="score-input" id="si2-${id}" type="number" min="0" placeholder="${t2}"/>
+      <button class="confirm-btn" onclick="saveScore(${g},'${id}','${t1.replace(/'/g,"\\'")}','${t2.replace(/'/g,"\\'")}')"> ${t('confirmScore')}</button>
+      <button class="cancel-btn" onclick="renderBracket()">${t('cancelScore')}</button>
+    </div>
+  `;
+}
+
+function saveScore(g,id,t1,t2){
+  const s1=parseInt(document.getElementById('si1-'+id).value);
+  const s2=parseInt(document.getElementById('si2-'+id).value);
+  if(isNaN(s1)||isNaN(s2)||s1<0||s2<0) return;
+  for(const round of allRounds[g]){
+    const m=round.matches.find(x=>x.id===id);
+    if(m){m.s1=s1;m.s2=s2;m.winner=s1>s2?t1:s2>s1?t2:null;break;}
+  }
+  propagate(allRounds[g]);
+  renderBracket();
+}
+
+// ── Admin Settings ──
+function saveTitle(){
+  const sub=document.getElementById('inputMainTitle').value.trim();
+  const name=document.getElementById('inputMainName').value.trim();
+  if(sub) mainSub=sub;
+  if(name) mainTitle=name;
+  document.getElementById('headerSub').textContent=mainSub;
+  document.getElementById('headerTitle').innerHTML=mainTitle;
+  showToast(t('toastTitle'));
+}
+
+function saveGroupNames(){
+  for(let i=0;i<4;i++){
+    const v=document.getElementById('gname'+i).value.trim();
+    if(v) groupNames[i]=v;
+  }
+  renderGroupTabs();
+  showToast(t('toastGroups'));
+}
+
+function confirmClearAll(){
+  document.getElementById('confirmTitle').textContent=t('confirmTitle');
+  document.getElementById('confirmDesc').textContent=t('confirmDesc');
+  document.getElementById('btnConfirmCancel').textContent=t('confirmCancel');
+  document.getElementById('btnConfirmOk').textContent=t('confirmOk');
+  document.getElementById('confirmModal').className='modal-bg';
+}
+
+function clearAll(){
+  allRounds=DEFAULT_TEAMS.map(teams=>buildBracket(teams));
+  document.getElementById('confirmModal').className='modal-bg hidden';
+  renderBracket();
+  showToast(t('toastCleared'));
+}
+
+// ── Language ──
+function toggleLang(){
+  lang=lang==='zh'?'en':'zh';
+  applyLang();
+  renderGroupTabs();
+  renderBracket();
+  if(!document.getElementById('tab-announce').classList.contains('hidden')) renderAnnouncements();
+}
+
+function applyLang(){
+  document.getElementById('headerSub').textContent=mainSub;
+  document.getElementById('liveLabel').textContent=t('live');
+  document.getElementById('tabGroups').textContent=t('tabBracket');
+  document.getElementById('tabAnnounce').textContent=t('tabAnnounce');
+  document.getElementById('adminBtn').textContent=isAdmin?t('adminMode'):t('staffBtn');
+  document.getElementById('bracketHint').textContent=t('bracketHint');
+  document.getElementById('apTitle').textContent=t('apTitle');
+  document.getElementById('apTitleLabel').textContent=t('apTitleLabel');
+  document.getElementById('apGroupLabel').textContent=t('apGroupLabel');
+  document.getElementById('apDangerLabel').textContent=t('apDangerLabel');
+  document.getElementById('btnSaveTitle').textContent=t('saveTitle');
+  document.getElementById('btnSaveGroups').textContent=t('saveGroups');
+  document.getElementById('btnClearAll').textContent=t('clearBtn');
+  document.getElementById('loginTitle').textContent=t('loginTitle');
+  document.getElementById('loginDesc').textContent=t('loginDesc');
+  document.getElementById('btnLoginCancel').textContent=t('loginCancel');
+  document.getElementById('btnLoginOk').textContent=t('loginOk');
+  document.getElementById('btnConfirmCancel').textContent=t('confirmCancel');
+  document.getElementById('btnConfirmOk').textContent=t('confirmOk');
+  document.getElementById('pwErr').textContent=t('loginErr');
+  document.getElementById('annInput').placeholder=t('annPlaceholder');
+  document.getElementById('btnPostAnn').textContent=t('postAnn');
+  document.querySelector('.lang-btn').textContent=t('langToggle');
+  // admin input placeholders
+  document.getElementById('inputMainTitle').placeholder=t('titlePlaceholder1');
+  document.getElementById('inputMainName').placeholder=t('titlePlaceholder2');
+  const dn=t('defaultGroups');
+  for(let i=0;i<4;i++) document.getElementById('gname'+i).placeholder=dn[i];
+}
+
+// ── Admin ──
+function toggleAdmin(){
+  if(isAdmin){isAdmin=false;refreshAdmin();}
+  else document.getElementById('loginModal').className='modal-bg';
+}
+
+function doLogin(){
+  const pw=document.getElementById('pwInput').value;
+  if(pw===ADMIN_PW){
+    isAdmin=true;
+    document.getElementById('loginModal').className='modal-bg hidden';
+    document.getElementById('pwInput').value='';
+    refreshAdmin();
+  } else {
+    document.getElementById('pwInput').className='modal-input err';
+    document.getElementById('pwErr').className='err-msg';
+  }
+}
+
+function closeLogin(){
+  document.getElementById('loginModal').className='modal-bg hidden';
+  document.getElementById('pwInput').value='';
+  document.getElementById('pwInput').className='modal-input ok';
+  document.getElementById('pwErr').className='err-msg hidden';
+}
+
+function refreshAdmin(){
+  const btn=document.getElementById('adminBtn');
+  btn.className=isAdmin?'admin-btn on':'admin-btn off';
+  btn.textContent=isAdmin?t('adminMode'):t('staffBtn');
+  document.getElementById('adminPanel').className=isAdmin?'admin-panel':'admin-panel hidden';
+  if(!document.getElementById('tab-announce').classList.contains('hidden')) renderAnnouncements();
+  else renderBracket();
+}
+
+// ── Tab ──
+function showTab(name,btn){
+  ['groups','announce'].forEach(t=>{
+    document.getElementById('tab-'+t).className=t===name?'':'hidden';
+  });
+  document.querySelectorAll('.tab').forEach(b=>b.className='tab');
+  btn.className='tab active';
+  if(name==='announce') renderAnnouncements();
+  if(name==='groups') renderBracket();
+}
+
+// ── Announcements ──
+function renderAnnouncements(){
+  document.getElementById('annInputRow').className=isAdmin?'ann-input-row':'ann-input-row hidden';
+  const list=document.getElementById('annList');
+  list.innerHTML='';
+  if(!announcements.length){
+    list.innerHTML=`<div style="text-align:center;color:#475569;padding:40px 0;font-size:14px">${t('noAnn')}</div>`;
+    return;
+  }
+  announcements.forEach(a=>{
+    const div=document.createElement('div');
+    div.className='ann-card card fade-in';
+    div.innerHTML=`<div class="ann-header-row"><div><div class="ann-time">${a.time}</div><div class="ann-text">${a.text}</div></div>${isAdmin?`<button class="del-btn" onclick="deleteAnn(${a.id})">✕</button>`:''}</div>`;
+    list.appendChild(div);
+  });
+}
+
+function postAnn(){
+  const inp=document.getElementById('annInput');
+  const txt=inp.value.trim();
+  if(!txt) return;
+  const now=new Date();
+  const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  announcements.unshift({id:++annIdCounter,time,text:txt});
+  inp.value='';
+  renderAnnouncements();
+}
+
+function deleteAnn(id){
+  announcements=announcements.filter(a=>a.id!==id);
+  renderAnnouncements();
+}
+
+// ── Toast ──
+function showToast(msg){
+  let el=document.getElementById('toastEl');
+  if(!el){el=document.createElement('div');el.id='toastEl';el.className='toast';document.body.appendChild(el);}
+  el.textContent=msg;el.style.opacity='1';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.opacity='0',2000);
+}
+
+// ── Init ──
+applyLang();
+renderGroupTabs();
+renderBracket();
+renderAnnouncements();
+</script>
+</body>
+</html>
