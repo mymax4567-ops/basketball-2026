@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>🏀 籃球錦標賽</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#030712;color:#f8fafc;font-family:'Noto Sans TC',Inter,sans-serif;min-height:100vh}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.pulse{animation:pulse 1.5s infinite}
+.fade-in{animation:fadeIn .3s ease forwards}
+
+/* Header */
+.header{background:linear-gradient(135deg,#0f172a 0%,#1a0800 50%,#0f172a 100%);border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:20}
+.header-inner{max-width:900px;margin:0 auto;padding:14px 16px 0}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.event-sub{font-size:10px;color:#f97316;font-weight:800;letter-spacing:.3em;text-transform:uppercase;margin-bottom:4px}
+.event-name{font-size:22px;font-weight:900;letter-spacing:-.02em}
+.event-name span.o{color:#f97316}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.admin-btn{border-radius:20px;padding:5px 13px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+.admin-btn.off{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);color:#94a3b8}
+.admin-btn.on{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.5);color:#f97316}
+.live-dot{display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;background:#4ade80}
+.live-label{font-size:10px;color:#4ade80;font-weight:700}
+.tabs{display:flex;border-top:1px solid rgba(255,255,255,.08);margin:0 -16px}
+.tab{flex:1;padding:12px 8px;font-size:13px;font-weight:700;background:transparent;border:none;cursor:pointer;color:#475569;border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:#f97316;border-bottom:2px solid #f97316}
+
+/* Content */
+.content{max-width:900px;margin:0 auto;padding:16px}
+
+/* Cards */
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;backdrop-filter:blur(8px)}
+
+/* Bracket */
+.bracket-scroll{overflow-x:auto;padding-bottom:16px}
+.bracket-hint{font-size:12px;color:#475569;margin-bottom:12px}
+.bracket-row{display:flex;gap:20px;min-width:max-content;align-items:center}
+.round-col{display:flex;flex-direction:column;align-items:center}
+.round-label{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;margin-bottom:12px}
+.round-matches{display:flex;flex-direction:column}
+.match-card{position:relative;padding:12px 14px;min-width:185px;border-radius:14px;transition:border-color .3s;margin-bottom:8px}
+.match-card.done{background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.6)}
+.match-card.live{background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.5)}
+.match-card.pending{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.match-card.placeholder{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
+.match-status{position:absolute;top:8px;right:10px;display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700}
+.status-dot{width:6px;height:6px;border-radius:50%}
+.team-row{display:flex;justify-content:space-between;align-items:center}
+.team-name{font-size:13px}
+.team-name.winner{color:#f97316;font-weight:700}
+.team-name.placeholder{color:#334155}
+.team-score{font-family:monospace;font-size:20px;font-weight:700;margin-left:12px;color:#94a3b8}
+.team-score.winner{color:#f97316}
+.divider{border-top:1px solid rgba(255,255,255,.08);margin:5px 0}
+.edit-btn{width:100%;background:transparent;border:1px solid rgba(249,115,22,.25);border-radius:8px;color:#f97316;font-size:12px;padding:5px 0;cursor:pointer;margin-top:8px;transition:background .2s}
+.edit-btn:hover{background:rgba(249,115,22,.1)}
+.score-inputs{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.score-input{width:52px;background:#1e293b;border:1px solid #f97316;border-radius:8px;padding:3px 6px;color:#f8fafc;text-align:center;font-size:13px;outline:none}
+.vs-label{color:#475569;font-size:12px}
+.confirm-btn{background:#f97316;color:#fff;border:none;border-radius:8px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.cancel-btn{background:transparent;color:#94a3b8;border:none;font-size:12px;cursor:pointer}
+.champion-box{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 22px;background:rgba(251,191,36,.1);border:2px solid #fbbf24;border-radius:16px}
+.champion-icon{font-size:26px}
+.champion-label{font-size:11px;color:#fbbf24;font-weight:800;letter-spacing:.15em}
+.champion-name{font-size:16px;color:#fbbf24;font-weight:900}
+
+/* Schedule */
+.schedule-list{display:flex;flex-direction:column;gap:8px}
+.schedule-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px}
+.s-time{font-family:monospace;font-weight:700;color:#f97316;font-size:14px;min-width:44px}
+.s-court{background:#1e293b;color:#94a3b8;font-size:11px;border-radius:6px;padding:2px 8px;text-align:center;min-width:32px}
+.s-match{flex:1;font-size:13px}
+.s-match b{color:#f8fafc}
+.s-match .vs{color:#475569;margin:0 5px}
+.s-status{font-size:11px;font-weight:700;border-radius:20px;padding:3px 10px;white-space:nowrap}
+.s-status.待賽{background:#1e293b;color:#94a3b8}
+.s-status.進行中{background:rgba(251,191,36,.2);color:#fbbf24}
+.s-status.結束{background:rgba(249,115,22,.2);color:#f97316}
+.s-status.未定{background:rgba(255,255,255,.04);color:#475569}
+.s-select{background:#1e293b;border:1px solid rgba(249,115,22,.5);border-radius:8px;color:#f8fafc;font-size:12px;padding:4px 8px;cursor:pointer;outline:none}
+
+/* Announce */
+.ann-input-row{display:flex;gap:8px;margin-bottom:12px}
+.ann-input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(249,115,22,.4);border-radius:12px;padding:10px 14px;color:#f8fafc;font-size:14px;outline:none}
+.ann-input:focus{border-color:#f97316}
+.ann-post-btn{background:#f97316;color:#fff;border:none;border-radius:12px;padding:10px 18px;font-weight:700;font-size:14px;cursor:pointer}
+.ann-card{padding:14px 18px;border-radius:14px;margin-bottom:8px}
+.ann-time{font-size:11px;color:#f97316;font-weight:700;margin-bottom:4px}
+.ann-text{font-size:14px;line-height:1.6}
+.ann-header{display:flex;justify-content:space-between;align-items:flex-start}
+.del-btn{background:transparent;border:none;color:#475569;cursor:pointer;font-size:16px;padding:2px}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{padding:28px;width:100%;max-width:320px;border-radius:20px;background:#0f172a;border:1px solid rgba(249,115,22,.3)}
+.modal h2{font-size:18px;font-weight:800;margin-bottom:4px}
+.modal p{font-size:13px;color:#94a3b8;margin-bottom:18px}
+.modal-input{width:100%;background:#1e293b;border-radius:10px;padding:10px 14px;color:#f8fafc;font-size:14px;outline:none;margin-bottom:4px;transition:border-color .2s}
+.modal-input.ok{border:1px solid rgba(255,255,255,.12)}
+.modal-input.err{border:1px solid #ef4444}
+.err-msg{color:#ef4444;font-size:12px;margin-bottom:10px}
+.modal-btns{display:flex;gap:8px;margin-top:14px}
+.modal-cancel{flex:1;background:transparent;border:1px solid rgba(255,255,255,.12);color:#94a3b8;border-radius:10px;padding:10px 0;font-size:14px;cursor:pointer}
+.modal-ok{flex:1;background:#f97316;color:#fff;border:none;border-radius:10px;padding:10px 0;font-size:14px;font-weight:700;cursor:pointer}
+.modal-hint{margin-top:14px;text-align:center;color:#334155;font-size:11px}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <div class="event-sub">2024 · 籃球錦標賽</div>
+        <div class="event-name">SLAM <span class="o">DUNK</span> CUP</div>
+        <div id="champion-display" class="hidden" style="margin-top:4px;font-size:12px;color:#fbbf24;font-weight:700"></div>
+      </div>
+      <div class="header-right">
+        <button class="admin-btn off" id="adminBtn" onclick="toggleAdmin()">🔐 工作人員</button>
+        <div class="live-dot">
+          <div class="dot pulse"></div>
+          <div class="live-label" id="liveLabel">即時更新</div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('bracket',this)">🏆 晉級圖</button>
+      <button class="tab" onclick="showTab('schedule',this)">📅 賽程表</button>
+      <button class="tab" onclick="showTab('announce',this)">📢 公告</button>
+    </div>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- Bracket Tab -->
+  <div id="tab-bracket">
+    <div class="bracket-hint">← 左右滑動查看完整晉級圖</div>
+    <div class="bracket-scroll">
+      <div class="bracket-row" id="bracketRow"></div>
+    </div>
+  </div>
+
+  <!-- Schedule Tab -->
+  <div id="tab-schedule" class="hidden">
+    <div class="schedule-list" id="scheduleList"></div>
+  </div>
+
+  <!-- Announce Tab -->
+  <div id="tab-announce" class="hidden">
+    <div id="annInputRow" class="ann-input-row hidden">
+      <input class="ann-input" id="annInput" placeholder="輸入公告內容後按發布..." onkeydown="if(event.key==='Enter')postAnn()"/>
+      <button class="ann-post-btn" onclick="postAnn()">發布</button>
+    </div>
+    <div id="annList"></div>
+  </div>
+
+</div>
+
+<!-- Login Modal -->
+<div class="modal-bg hidden" id="loginModal">
+  <div class="modal">
+    <h2>🔐 工作人員登入</h2>
+    <p>輸入管理員密碼以更新比分與狀態</p>
+    <input class="modal-input ok" type="password" id="pwInput" placeholder="密碼"
+      onkeydown="if(event.key==='Enter')doLogin()"
+      oninput="document.getElementById('pwInput').className='modal-input ok';document.getElementById('pwErr').className='err-msg hidden'"/>
+    <div class="err-msg hidden" id="pwErr">密碼錯誤，請再試一次</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeLogin()">取消</button>
+      <button class="modal-ok" onclick="doLogin()">登入</button>
+    </div>
+    <div class="modal-hint">Demo 密碼：bball2024</div>
+  </div>
+</div>
+
+<script>
+/* ── 設定 ── */
+const ADMIN_PW = 'bball2024';
+const TEAMS = ['火箭隊','雷霆隊','湖人隊','勇士隊','公牛隊','熱火隊','凱爾特人','76人隊','快艇隊','爵士隊','灰熊隊','馬刺隊','開拓者','老鷹隊','魔術隊','黃蜂隊'];
+const ROUND_COLORS = {'16強':'#60a5fa','八強':'#a78bfa','四強':'#f472b6','決賽':'#f97316'};
+
+/* ── State ── */
+let isAdmin = false;
+let rounds = buildBracket(TEAMS);
+let schedule = [
+  {id:1,time:'09:00',court:'A場',t1:'火箭隊',t2:'雷霆隊',round:'16強',status:'待賽'},
+  {id:2,time:'09:00',court:'B場',t1:'湖人隊',t2:'勇士隊',round:'16強',status:'待賽'},
+  {id:3,time:'10:00',court:'A場',t1:'公牛隊',t2:'熱火隊',round:'16強',status:'待賽'},
+  {id:4,time:'10:00',court:'B場',t1:'凱爾特人',t2:'76人隊',round:'16強',status:'待賽'},
+  {id:5,time:'11:00',court:'A場',t1:'快艇隊',t2:'爵士隊',round:'16強',status:'待賽'},
+  {id:6,time:'11:00',court:'B場',t1:'灰熊隊',t2:'馬刺隊',round:'16強',status:'待賽'},
+  {id:7,time:'13:00',court:'A場',t1:'開拓者',t2:'老鷹隊',round:'16強',status:'待賽'},
+  {id:8,time:'13:00',court:'B場',t1:'魔術隊',t2:'黃蜂隊',round:'16強',status:'待賽'},
+  {id:9,time:'14:30',court:'A場',t1:'TBD',t2:'TBD',round:'八強',status:'未定'},
+  {id:10,time:'14:30',court:'B場',t1:'TBD',t2:'TBD',round:'八強',status:'未定'},
+  {id:11,time:'15:30',court:'A場',t1:'TBD',t2:'TBD',round:'八強',status:'未定'},
+  {id:12,time:'15:30',court:'B場',t1:'TBD',t2:'TBD',round:'八強',status:'未定'},
+  {id:13,time:'16:30',court:'A場',t1:'TBD',t2:'TBD',round:'四強',status:'未定'},
+  {id:14,time:'16:30',court:'B場',t1:'TBD',t2:'TBD',round:'四強',status:'未定'},
+  {id:15,time:'17:30',court:'A場',t1:'TBD',t2:'TBD',round:'決賽',status:'未定'},
+];
+let announcements = [
+  {id:1,time:'08:30',text:'🏀 歡迎參加 2024 籃球錦標賽！報到處在大門右側，請攜帶報名證。'},
+  {id:2,time:'08:45',text:'📋 所有隊伍請於比賽前 15 分鐘到指定場地集合熱身，遲到視同棄權。'},
+];
+let annIdCounter = 100;
+
+/* ── Bracket logic ── */
+function buildBracket(teams){
+  const r1=[];
+  for(let i=0;i<8;i++) r1.push({id:`r1-${i}`,t1:teams[i*2],t2:teams[i*2+1],s1:null,s2:null,winner:null});
+  const r2=[],r3=[],rf=[];
+  for(let i=0;i<4;i++) r2.push({id:`r2-${i}`,t1:null,t2:null,s1:null,s2:null,winner:null});
+  for(let i=0;i<2;i++) r3.push({id:`r3-${i}`,t1:null,t2:null,s1:null,s2:null,winner:null});
+  rf.push({id:'final',t1:null,t2:null,s1:null,s2:null,winner:null});
+  return [
+    {name:'16強',matches:r1},
+    {name:'八強',matches:r2},
+    {name:'四強',matches:r3},
+    {name:'決賽',matches:rf},
+  ];
+}
+
+function propagate(){
+  for(let ri=0;ri<rounds.length-1;ri++){
+    const winners=rounds[ri].matches.map(m=>m.winner);
+    for(let mi=0;mi<rounds[ri+1].matches.length;mi++){
+      rounds[ri+1].matches[mi].t1=winners[mi*2]||null;
+      rounds[ri+1].matches[mi].t2=winners[mi*2+1]||null;
+      if(!rounds[ri+1].matches[mi].t1||!rounds[ri+1].matches[mi].t2){
+        rounds[ri+1].matches[mi].s1=null;
+        rounds[ri+1].matches[mi].s2=null;
+        rounds[ri+1].matches[mi].winner=null;
+      }
+    }
+  }
+}
+
+/* ── Render Bracket ── */
+function renderBracket(){
+  const row=document.getElementById('bracketRow');
+  row.innerHTML='';
+  rounds.forEach((round,ri)=>{
+    const col=document.createElement('div');
+    col.className='round-col';
+    const lbl=document.createElement('div');
+    lbl.className='round-label';
+    lbl.style.color=ROUND_COLORS[round.name]||'#94a3b8';
+    lbl.textContent=round.name;
+    col.appendChild(lbl);
+    const matchesDiv=document.createElement('div');
+    matchesDiv.className='round-matches';
+    const gap=Math.pow(2,ri)*10;
+    matchesDiv.style.gap=gap+'px';
+    round.matches.forEach(m=>{
+      matchesDiv.appendChild(makeMatchCard(m));
+    });
+    col.appendChild(matchesDiv);
+    row.appendChild(col);
+  });
+  // Champion
+  const champ=rounds[3].matches[0].winner;
+  const cd=document.getElementById('champion-display');
+  if(champ){
+    const box=document.createElement('div');
+    box.className='champion-box';
+    box.style.marginLeft='16px';
+    box.innerHTML=`<div class="champion-icon">🏆</div><div class="champion-label">冠軍</div><div class="champion-name">${champ}</div>`;
+    row.appendChild(box);
+    cd.textContent='🏆 冠軍：'+champ;
+    cd.className='';
+  } else {
+    cd.className='hidden';
+  }
+  updateLiveLabel();
+}
+
+function makeMatchCard(m){
+  const isPlaceholder=!m.t1&&!m.t2;
+  const isDone=!!m.winner;
+  const isLive=m.s1!==null&&!isDone;
+  const t1=m.t1||'待定', t2=m.t2||'待定';
+  const div=document.createElement('div');
+  div.className='match-card '+(isPlaceholder?'placeholder':isDone?'done':isLive?'live':'pending');
+
+  let statusHTML='';
+  if(!isPlaceholder){
+    const sc=isDone?'#f97316':isLive?'#fbbf24':'#475569';
+    const sl=isDone?'結束':isLive?'進行中':'待賽';
+    const pulse=isLive?' pulse':'';
+    statusHTML=`<div class="match-status"><div class="status-dot${pulse}" style="background:${sc}"></div><span style="color:${sc}">${sl}</span></div>`;
+  }
+
+  const w1=m.winner===t1,w2=m.winner===t2;
+  const s1=m.s1!==null?m.s1:'–', s2=m.s2!==null?m.s2:'–';
+
+  div.innerHTML=`
+    ${statusHTML}
+    <div class="team-row">
+      <span class="team-name ${isPlaceholder?'placeholder':w1?'winner':''}">${t1}</span>
+      ${!isPlaceholder?`<span class="team-score ${w1?'winner':''}">${s1}</span>`:''}
+    </div>
+    <div class="divider"></div>
+    <div class="team-row">
+      <span class="team-name ${isPlaceholder?'placeholder':w2?'winner':''}">${t2}</span>
+      ${!isPlaceholder?`<span class="team-score ${w2?'winner':''}">${s2}</span>`:''}
+    </div>
+    ${isAdmin&&!isPlaceholder?`
+      <div id="edit-area-${m.id}">
+        <button class="edit-btn" onclick="openEdit('${m.id}','${t1}','${t2}')">✏️ 更新比分</button>
+      </div>
+    `:''}
+  `;
+  return div;
+}
+
+function openEdit(id,t1,t2){
+  const area=document.getElementById('edit-area-'+id);
+  area.innerHTML=`
+    <div class="score-inputs">
+      <input class="score-input" id="si1-${id}" type="number" min="0" placeholder="${t1}"/>
+      <span class="vs-label">vs</span>
+      <input class="score-input" id="si2-${id}" type="number" min="0" placeholder="${t2}"/>
+      <button class="confirm-btn" onclick="saveScore('${id}','${t1}','${t2}')">確認</button>
+      <button class="cancel-btn" onclick="renderBracket()">取消</button>
+    </div>
+  `;
+}
+
+function saveScore(id,t1,t2){
+  const s1=parseInt(document.getElementById('si1-'+id).value);
+  const s2=parseInt(document.getElementById('si2-'+id).value);
+  if(isNaN(s1)||isNaN(s2)||s1<0||s2<0) return;
+  for(const round of rounds){
+    const m=round.matches.find(x=>x.id===id);
+    if(m){
+      m.s1=s1; m.s2=s2;
+      m.winner=s1>s2?t1:s2>s1?t2:null;
+      break;
+    }
+  }
+  propagate();
+  renderBracket();
+}
+
+/* ── Render Schedule ── */
+function renderSchedule(){
+  const list=document.getElementById('scheduleList');
+  list.innerHTML='';
+  schedule.forEach(item=>{
+    const div=document.createElement('div');
+    div.className='schedule-item card fade-in';
+    const statusEl=isAdmin
+      ?`<select class="s-select" onchange="updateStatus(${item.id},this.value)">
+          ${['待賽','進行中','結束','未定'].map(s=>`<option${s===item.status?' selected':''}>${s}</option>`).join('')}
+        </select>`
+      :`<span class="s-status ${item.status}">${item.status==='進行中'?'<span class="pulse">●</span> ':''} ${item.status}</span>`;
+    div.innerHTML=`
+      <div class="s-time">${item.time}</div>
+      <div class="s-court">${item.court}</div>
+      <div class="s-match"><b>${item.t1}</b><span class="vs">vs</span><b>${item.t2}</b></div>
+      ${statusEl}
+    `;
+    list.appendChild(div);
+  });
+  updateLiveLabel();
+}
+
+function updateStatus(id,val){
+  const item=schedule.find(s=>s.id===id);
+  if(item) item.status=val;
+  renderSchedule();
+}
+
+/* ── Render Announcements ── */
+function renderAnnouncements(){
+  document.getElementById('annInputRow').className=isAdmin?'ann-input-row':'ann-input-row hidden';
+  const list=document.getElementById('annList');
+  list.innerHTML='';
+  if(!announcements.length){
+    list.innerHTML='<div style="text-align:center;color:#475569;padding:40px 0;font-size:14px">目前沒有公告</div>';
+    return;
+  }
+  announcements.forEach(a=>{
+    const div=document.createElement('div');
+    div.className='ann-card card fade-in';
+    div.innerHTML=`
+      <div class="ann-header">
+        <div>
+          <div class="ann-time">${a.time}</div>
+          <div class="ann-text">${a.text}</div>
+        </div>
+        ${isAdmin?`<button class="del-btn" onclick="deleteAnn(${a.id})">✕</button>`:''}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function postAnn(){
+  const inp=document.getElementById('annInput');
+  const txt=inp.value.trim();
+  if(!txt) return;
+  const now=new Date();
+  const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  announcements.unshift({id:++annIdCounter,time,text:txt});
+  inp.value='';
+  renderAnnouncements();
+}
+
+function deleteAnn(id){
+  announcements=announcements.filter(a=>a.id!==id);
+  renderAnnouncements();
+}
+
+/* ── Tab switching ── */
+function showTab(name,btn){
+  ['bracket','schedule','announce'].forEach(t=>{
+    document.getElementById('tab-'+t).className=t===name?'':'hidden';
+  });
+  document.querySelectorAll('.tab').forEach(b=>b.className='tab');
+  btn.className='tab active';
+  if(name==='schedule') renderSchedule();
+  if(name==='announce') renderAnnouncements();
+  if(name==='bracket') renderBracket();
+}
+
+/* ── Admin ── */
+function toggleAdmin(){
+  if(isAdmin){ isAdmin=false; refreshAdmin(); }
+  else { document.getElementById('loginModal').className='modal-bg'; }
+}
+
+function doLogin(){
+  const pw=document.getElementById('pwInput').value;
+  if(pw===ADMIN_PW){
+    isAdmin=true;
+    document.getElementById('loginModal').className='modal-bg hidden';
+    document.getElementById('pwInput').value='';
+    refreshAdmin();
+  } else {
+    document.getElementById('pwInput').className='modal-input err';
+    document.getElementById('pwErr').className='err-msg';
+  }
+}
+
+function closeLogin(){
+  document.getElementById('loginModal').className='modal-bg hidden';
+  document.getElementById('pwInput').value='';
+  document.getElementById('pwInput').className='modal-input ok';
+  document.getElementById('pwErr').className='err-msg hidden';
+}
+
+function refreshAdmin(){
+  const btn=document.getElementById('adminBtn');
+  btn.className=isAdmin?'admin-btn on':'admin-btn off';
+  btn.textContent=isAdmin?'✅ 管理員模式':'🔐 工作人員';
+  const active=document.querySelector('.tab.active').textContent;
+  if(active.includes('晉級')) renderBracket();
+  else if(active.includes('賽程')) renderSchedule();
+  else renderAnnouncements();
+}
+
+function updateLiveLabel(){
+  const liveCount=schedule.filter(s=>s.status==='進行中').length;
+  document.getElementById('liveLabel').textContent=liveCount>0?`${liveCount} 場進行中`:'即時更新';
+}
+
+/* ── Init ── */
+renderBracket();
+renderAnnouncements();
+</script>
+</body>
+</html>
